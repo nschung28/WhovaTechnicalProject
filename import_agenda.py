@@ -71,6 +71,43 @@ class ImportAgenda:
     #
     def import_file(self, file_path):
         rows = self.extract_xls(file_path)
+        
+        # If current row is a sub-session, utilize this to find main session id
+        sub_to_main = None
+        for row in rows:
+            date, time_start, time_end, sesh_type, sesh_title, loc, desc, speaker = row
+            sid = None
+            if sesh_type.lower() == 'sub':
+                sid = self.sessions.insert({
+                    'main_session_id': sub_to_main,
+                    'date': date.replace("'", "''"),
+                    'time_start': time_start.replace("'", "''"),
+                    'time_end': time_end.replace("'", "''"),
+                    'session_title': sesh_title.replace("'", "''"),
+                    'location': loc.replace("'", "''"),
+                    'description': desc.replace("'", "''")
+                })
+            else:
+                sid = self.sessions.insert({
+                    'main_session_id': None,
+                    'date': date.replace("'", "''"),
+                    'time_start': time_start.replace("'", "''"),
+                    'time_end': time_end.replace("'", "''"),
+                    'session_title': sesh_title.replace("'", "''"),
+                    'location': loc.replace("'", "''"),
+                    'description': desc.replace("'", "''")
+                })
+                sub_to_main = sid
+            
+            if speaker:
+                for person in speaker.split(';'):
+                    person = person.strip()
+                    if not person:
+                        continue
+                    self.speakers.insert({
+                        'session_id': sid,
+                        'speaker_name': person.replace("'", "''")
+                    })
 
 
     @classmethod
@@ -149,7 +186,7 @@ class ImportAgenda:
 
 def main():
     if len(sys.argv) != 2:
-        print('Usage: ./import_agenda.py agenda.xls')
+        print('Usage: ./import_agenda.py <.xls file path>')
         sys.exit(1)
 
     imported_agenda = ImportAgenda()
