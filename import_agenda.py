@@ -151,6 +151,11 @@ class ImportAgenda:
             raise RuntimeError(
                 f"Missing required column headers in row {cls.NUM_ROWS_TO_SKIP+1}: {', '.join(sorted(missing_headers))}"
             )
+
+        if len(columns) > len(cls.EXPECTED_HEADERS):
+            print("Received more columns than expected.")
+            print(f"Expected {len(cls.EXPECTED_HEADERS)} columns, received {len(columns)} columns.")
+            print("Processing with import, ignoring extra columns.")
         
         # Iterate over all the rows and extract data as tuples into rows. 
         # Also check for any duplicate rows and raise error if so.
@@ -166,7 +171,7 @@ class ImportAgenda:
             if missing:
                 missing = [norm.replace('_', ' ') for norm in missing]
                 raise RuntimeError(
-                    f"Missing required fields {', '.join(missing)} in row {row_num+1}"
+                    f"Missing required fields: {', '.join(missing)} in row {row_num+1}"
                 )
 
             data_row = (

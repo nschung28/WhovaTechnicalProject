@@ -116,7 +116,6 @@ class LookupAgenda:
             where={'lower(speakers.speaker_name)': speaker_name.lower()}   
         )
         for row in found_ids:
-            print(row)
             session_id = row['sessions.id']
             self.grab_rows(out, duplicate, session_id)
         
@@ -130,11 +129,11 @@ class LookupAgenda:
     # \param out         list     contains all the sessions to be displayed.
     # \param duplicate   set      contains all sessions that were found to prevent
     #                             duplicate sessions from being displayed
+    #
     # \param session_id  integer  the session id to be searched for in the database
     #
     def grab_rows(self, out, duplicate, session_id):
         # Check to make sure we don't have duplicate outputs.
-        print(type(out))
         if session_id in duplicate:
             return
         
@@ -169,7 +168,6 @@ def main():
         lookup_agenda.close_conn()
         sys.exit(1)
 
-    # '&*_' is utilized as the join so normal '_' can be utilized in the agenda
     col, val = sys.argv[1], ' '.join(sys.argv[2:])
     if col.lower() not in lookup_agenda.VALID_COLS:
         print(f'Error: Column must be one of the following: {lookup_agenda.VALID_COLS}')
