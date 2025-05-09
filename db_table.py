@@ -21,7 +21,8 @@ class db_table:
     # creates the table if it does not exist yet in DB
     #
     # \param name    string                name of the DB table
-    # \param schema  dict<string, string>  schema of DB table, mapping column name to their DB type & constraint
+    # \param schema  dict<string, string>  schema of DB table, mapping column name to their DB
+    #                                      type & constraint
     #
     # Example: table("users", { "id": "integer PRIMARY KEY", "name": "text" })
     #
@@ -63,7 +64,8 @@ class db_table:
     # Query the database by applying the specified filters
     #
     # \param columns  array<string>         columns to be fetched. if empty, will query all the columns
-    # \param where    dict<string, string>  where filters to be applied. only combine them using AND and only check for strict equality
+    # \param where    dict<string, string>  where filters to be applied. only combine them using AND 
+    #                                       and only check for strict equality
     #
     # \return [ { col1: val1, col2: val2, col3: val3 } ]
     #
@@ -79,12 +81,14 @@ class db_table:
         # build query string
         columns_query_string = ", ".join(columns)
         query                = "SELECT %s FROM %s" % (columns_query_string, self.name)
+
         # build where query string
         if where:
             where_query_string = [ "%s = '%s'" % (k,v) for k,v in where.items() ]
             query             += " WHERE " + ' AND '.join(where_query_string)
         
         result = []
+
         # SELECT id, name FROM users [ WHERE id=42 AND name=John ]
         #
         # Note that columns are formatted into the string without using sqlite safe substitution mechanism
@@ -97,6 +101,46 @@ class db_table:
                 result_row[columns[i]] = row[i]
             result.append(result_row)
 
+        return result
+
+    #
+    # SELECT JOIN wrapper
+    # peforms an INNER JOIN on the database with the provided database through specified filters
+    # 
+    # \param other_db  string                name of the DB table to join on
+    # \param left      string                column in this DB
+    # \param right     string                column in the other DB
+    # \param columns   array<string>         columns to be fetched. if empty, will query all the columns
+    # \param where     dict<string, string>  where filters to be applied. only combine them using AND and
+    #                                        only check for strict equality
+    #
+    # \return [ { col1: val1, col2: val2, ... } ]
+    # 
+    # Example table.select_join("speakers", "id", "session_id")
+    #         table.select_join("speakers", "id", "session_id", ["date", "session_title"])
+    #         table.select_join("speakers", "id", "session_id", where={ "speakers.speaker": "John" })
+    #
+    def select_join(self, other_db, left, right, columns = [], where = {}):
+        # by default, query all columns
+        if not columns:
+            columns = list(self.schema.keys())
+        
+        # build query string
+        columns_query_string = ", ".join(columns)
+        query = f"SELECT {columns_query_string} FROM {self.name} JOIN {other_db} ON {self.name}.{left} = {other_db}.{right}"
+        
+        # build where query string
+        if where:
+            where_query_string = [ "%s = '%s'" % (k, v) for k, v in where.items() ]
+            query += " WHERE " + " AND ".join(where_query_string)
+
+        result = []
+
+        for row in self.db_conn.execute(query):
+            result_row = {}
+            for i, col in enumerate(columns):
+                result_row[col] = row[i]
+            result.append(result_row)
         return result
 
     #
@@ -128,7 +172,8 @@ class db_table:
     # update multiple rows matching the specified condition
     #
     # \param values  dict<string, string>  values to be updates, mapping column to value
-    # \param where   dict<string, string>  where filters to be applied. only combine them using AND and only check for strict equality
+    # \param where   dict<string, string>  where filters to be applied. only combine them using AND and
+    #                                      only check for strict equality
     #
     # \return number of updated records
     #
