@@ -66,7 +66,6 @@ class ImportAgenda:
                                 'speaker_name': 'text'
                             })
 
-
     #
     # Database import and initialization.
     # Takes in a .xls file and will read and update the appropriate tables to contain data in
@@ -85,22 +84,22 @@ class ImportAgenda:
             if sesh_type.lower() == 'sub':
                 sid = self.sessions.insert({
                     'main_session_id': sub_to_main,
-                    'date': date.replace("'", "''"),
-                    'time_start': time_start.replace("'", "''"),
-                    'time_end': time_end.replace("'", "''"),
-                    'session_title': sesh_title.replace("'", "''"),
-                    'location': loc.replace("'", "''"),
-                    'description': desc.replace("'", "''")
+                    'date': date.replace("'", "''").strip(),
+                    'time_start': time_start.replace("'", "''").strip(),
+                    'time_end': time_end.replace("'", "''").strip(),
+                    'session_title': sesh_title.replace("'", "''").strip(),
+                    'location': loc.replace("'", "''").strip(),
+                    'description': desc.replace("'", "''").strip()
                 })
             else:
                 sid = self.sessions.insert({
                     'main_session_id': None,
-                    'date': date.replace("'", "''"),
-                    'time_start': time_start.replace("'", "''"),
-                    'time_end': time_end.replace("'", "''"),
-                    'session_title': sesh_title.replace("'", "''"),
-                    'location': loc.replace("'", "''"),
-                    'description': desc.replace("'", "''")
+                    'date': date.replace("'", "''").strip(),
+                    'time_start': time_start.replace("'", "''").strip(),
+                    'time_end': time_end.replace("'", "''").strip(),
+                    'session_title': sesh_title.replace("'", "''").strip(),
+                    'location': loc.replace("'", "''").strip(),
+                    'description': desc.replace("'", "''").strip()
                 })
                 sub_to_main = sid
             
@@ -115,7 +114,6 @@ class ImportAgenda:
                     })
         
         print(f'Successfully imported {len(rows)} rows from {file_path}')
-
 
     @classmethod
     #
@@ -190,7 +188,6 @@ class ImportAgenda:
             rows.append(data_row)
         
         return rows
-
 
     #
     # Close the database connection
