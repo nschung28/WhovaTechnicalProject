@@ -13,8 +13,10 @@ from db_table import db_table
 class ImportAgenda:
 
     # Set of headers that are expected to be found in the xls sheet prior to importing
-    EXPECTED_HEADERS = {'date', 'time_start', 'time_end', 'session_or_sub-session(sub)', 'session_title',
-                            'room/location', 'description', 'speakers'}
+    EXPECTED_HEADERS = {'date', 'time_start', 'time_end', 'session_or_sub-session(sub)',
+                        'session_title', 'room/location', 'description', 'speakers'}
+
+    REQUIRED_FIELDS = {'date', 'time_start', 'time_end', 'session_or_sub-session(sub)', 'session_title'}
 
     # Skip first 14 rows NUM_ROWS_TO_SKIP + 1 represents the first row of data
     NUM_ROWS_TO_SKIP = 14
@@ -33,11 +35,12 @@ class ImportAgenda:
         conn.close()
 
         # Create the table for sessions:
-        # Table will include information such as the PRIMARY KEY session id, another session id (if it is a sub-session),
-        # date of the session, starting and ending time of the session, name of the session, session location,
-        # and the description for the session.
-        # NOTE: Might be useful to add indexing to main_session_id to find sub-sessions of a session a lot faster. Same with
-        # date and location since these commonly correspond to larger amounts of data.
+        # Table will include information such as the PRIMARY KEY session id, another session id
+        # (if it is a sub-session), date of the session, starting and ending time of the session,
+        # name of the session, session location, and the description for the session.
+        # NOTE: Might be useful to add indexing to main_session_id to find sub-sessions of a
+        # session a lot faster. Same with date and location since these commonly correspond to
+        # larger amounts of data.
         self.sessions = db_table('sessions', 
                             {
                                 'id': 'integer PRIMARY KEY',
@@ -51,21 +54,23 @@ class ImportAgenda:
                             })
         
         # Create the table for the speakers:
-        # Table will include information on the PRIMARY KEY speaker id, the session id that they are speaking at,
-        # and the name of the speaker.
+        # Table will include information on the PRIMARY KEY speaker id, the session id that they
+        # are speaking at, and the name of the speaker.
         # NOTE: 'id' is utilized for faster lookup and possible joins that might be needed later.
-        # NOTE: might go back and add an index for the speaker name and session_id for faster look up later.
+        # NOTE: might go back and add an index for the speaker name and session_id for faster
+        # look up later.
         self.speakers = db_table('speakers',
                             {
                                 'id': 'integer PRIMARY KEY',
-                                'session_id': 'text',
+                                'session_id': 'integer',
                                 'speaker_name': 'text'
                             })
 
 
     #
     # Database import and initialization.
-    # Takes in a .xls file and will read and update the appropriate tables to contain data in the file.
+    # Takes in a .xls file and will read and update the appropriate tables to contain data in
+    # the file.
     # 
     # \param file_path  string  path to the .xls file to be imported.
     #
@@ -108,6 +113,8 @@ class ImportAgenda:
                         'session_id': sid,
                         'speaker_name': person.replace("'", "''")
                     })
+        
+        print(f'Successfully imported {len(rows)} rows from {file_path}')
 
 
     @classmethod
@@ -154,6 +161,15 @@ class ImportAgenda:
         duplicate_rows = set()
         for row_num in range(cls.NUM_ROWS_TO_SKIP + 1, sh.nrows):
             row = sh.row(row_num)
+
+            # Ensures that Session Title, Date, Time Start, Time End, Session are provided
+            vals = {h: row[index[h]].value for h in cls.REQUIRED_FIELDS}
+            missing = [h for h, v in vals.items() if not str(v).strip()]
+            if missing:
+                missing = [norm.replace('_', ' ') for norm in missing]
+                raise RuntimeError(
+                    f"Missing required fields {', '.join(missing)} in row {row_num+1}"
+                )
 
             data_row = (
                 row[index['date']].value,
